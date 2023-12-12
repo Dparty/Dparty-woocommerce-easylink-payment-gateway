@@ -18,7 +18,6 @@ class WC_EasyLink_Payment_Gateway extends WC_Payment_Gateway
 	private $remark;
 	private $merchantsName;
 	private $apiDomain;
-	private $frontendUrl;
 	private $easyLinkDB = "wp_easylink_payment_gateway";
 	private $callbackUrl;
 	private function db()
@@ -46,7 +45,6 @@ class WC_EasyLink_Payment_Gateway extends WC_Payment_Gateway
 		$this->merchantsName = $this->get_option('merchantsName');
 		$this->channelType = $this->get_option('channelType');
 		$this->apiDomain = $this->get_option('apiDomain');
-		$this->frontendUrl = $this->get_option('frontendUrl');
 		$this->callbackUrl = $this->get_option('callbackUrl');
 		add_action('woocommerce_api_easylink_callback', array($this, 'webhook'));
 		add_action('woocommerce_update_options_payment_gateways_' . $this->id, array($this, 'process_admin_options'));
@@ -127,15 +125,10 @@ class WC_EasyLink_Payment_Gateway extends WC_Payment_Gateway
 				'type' => 'text',
 				'description' 	=> __('The default order status if this gateway used in payment.', 'woocommerce-other-payment-gateway'),
 			),
-			'frontendUrl' => array(
-				'title' => __('Frontend URL', 'woocommerce-other-payment-gateway'),
-				'type' => 'text',
-				'description' 	=> __('The default order status if this gateway used in payment.', 'woocommerce-other-payment-gateway'),
-			),
 			'callbackUrl' => array(
 				'title' => __('Callback URL', 'woocommerce-other-payment-gateway'),
 				'type' => 'text',
-				'default' => "https://shop.warmyellow.com?wc-api=easylink_callback",
+				'default' => "https://shop.warmyellow.com/?wc-api=easylink_callback",
 				'description' 	=> __('The default order status if this gateway used in payment.', 'woocommerce-other-payment-gateway'),
 			),
 		);
@@ -163,7 +156,6 @@ class WC_EasyLink_Payment_Gateway extends WC_Payment_Gateway
 			"amount" => $order->get_total(),
 			"orderCreateTime" => $order->get_date_created()->format('Y-m-d H:i:s'),
 			"orderId" => "warmyellow-" . $order->get_id(),
-			"frontendUrl" => $this->frontendUrl,
 			"channel" => $this->channelID,
 			"customerIp" => "127.0.0.1",
 			"callbackUrl" => $this->callbackUrl,
@@ -180,6 +172,7 @@ class WC_EasyLink_Payment_Gateway extends WC_Payment_Gateway
 			'form_params' => $payload
 		]);
 		$body = $response->getBody();
+		error_log($body);
 		$j = json_decode($body, true);
 		$orderId = $order->get_id();
 		$paymentId = $j['paymentId'];
