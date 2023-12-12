@@ -158,7 +158,7 @@ class WC_EasyLink_Payment_Gateway extends WC_Payment_Gateway
 			"frontendUrl" => $this->frontendUrl,
 			"channel" => $this->channelID,
 			"customerIp" => "127.0.0.1",
-			"callbackUrl" => "https://shop.warmyellow.com",
+			"callbackUrl" => "https://shop.warmyellow.com?wc-api=easylink_callback",
 			"frontendUrl" => $this->get_return_url()
 		);
 		$accessKey = sign($payload, $this->scretKey);
