@@ -1,0 +1,17 @@
+{
+  "name": "chenyunda/woocommerce-other-payment-gateway",
+  "autoload": {
+    "psr-4": {
+      "Chenyunda\\WoocommerceOtherPaymentGateway\\": "src/"
+    }
+  },
+  "authors": [
+    {
+      "name": "Dan Chen",
+      "email": "dan.chen@boardware.com"
+    }
+  ],
+  "require": {
+    "guzzlehttp/guzzle": "^7.0"
+  }
+}
