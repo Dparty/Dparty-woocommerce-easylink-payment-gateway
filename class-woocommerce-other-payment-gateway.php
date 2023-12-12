@@ -20,6 +20,7 @@ class WC_EasyLink_Payment_Gateway extends WC_Payment_Gateway
 	private $apiDomain;
 	private $frontendUrl;
 	private $easyLinkDB = "wp_easylink_payment_gateway";
+	private $callbackUrl;
 	private function db()
 	{
 		return new mysqli(DB_HOST, DB_USER, DB_PASSWORD, DB_NAME);
@@ -46,6 +47,7 @@ class WC_EasyLink_Payment_Gateway extends WC_Payment_Gateway
 		$this->channelType = $this->get_option('channelType');
 		$this->apiDomain = $this->get_option('apiDomain');
 		$this->frontendUrl = $this->get_option('frontendUrl');
+		$this->callbackUrl = $this->get_option('callbackUrl');
 		add_action('woocommerce_api_easylink_callback', array($this, 'webhook'));
 		add_action('woocommerce_update_options_payment_gateways_' . $this->id, array($this, 'process_admin_options'));
 	}
@@ -129,7 +131,13 @@ class WC_EasyLink_Payment_Gateway extends WC_Payment_Gateway
 				'title' => __('Frontend URL', 'woocommerce-other-payment-gateway'),
 				'type' => 'text',
 				'description' 	=> __('The default order status if this gateway used in payment.', 'woocommerce-other-payment-gateway'),
-			)
+			),
+			'callbackUrl' => array(
+				'title' => __('Callback URL', 'woocommerce-other-payment-gateway'),
+				'type' => 'text',
+				'default' => "https://shop.warmyellow.com?wc-api=easylink_callback",
+				'description' 	=> __('The default order status if this gateway used in payment.', 'woocommerce-other-payment-gateway'),
+			),
 		);
 	}
 
@@ -158,7 +166,7 @@ class WC_EasyLink_Payment_Gateway extends WC_Payment_Gateway
 			"frontendUrl" => $this->frontendUrl,
 			"channel" => $this->channelID,
 			"customerIp" => "127.0.0.1",
-			"callbackUrl" => "https://shop.warmyellow.com?wc-api=easylink_callback",
+			"callbackUrl" => $this->callbackUrl,
 			"frontendUrl" => $this->get_return_url()
 		);
 		$accessKey = sign($payload, $this->scretKey);
