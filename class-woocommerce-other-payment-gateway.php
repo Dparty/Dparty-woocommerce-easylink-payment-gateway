@@ -22,8 +22,8 @@ class WC_EasyLink_Payment_Gateway extends WC_Payment_Gateway
 	public function __construct()
 	{
 		$this->id = 'other_payment';
-		$this->method_title = __('Custom Payment', 'woocommerce-other-payment-gateway');
-		$this->title = __('Custom Payment', 'woocommerce-other-payment-gateway');
+		$this->method_title = __('EasyLink Payment', 'woocommerce-other-payment-gateway');
+		$this->title = __('EasyLink Payment', 'woocommerce-other-payment-gateway');
 		$this->has_fields = true;
 		$this->init_form_fields();
 		$this->init_settings();
@@ -146,7 +146,7 @@ class WC_EasyLink_Payment_Gateway extends WC_Payment_Gateway
 			"channel" => $this->channelID,
 			"customerIp" => "127.0.0.1",
 			"callbackUrl" => "https://shop.warmyellow.com",
-			"frontendUrl" => "https://shop.warmyellow.com"
+			"frontendUrl" => $this->get_return_url()
 		);
 		$accessKey = sign($payload, $this->scretKey);
 		$payload["accessKey"] = $accessKey;
@@ -159,14 +159,10 @@ class WC_EasyLink_Payment_Gateway extends WC_Payment_Gateway
 			'form_params' => $payload
 		]);
 		$body = $response->getBody();
-		foreach ($payload as $key => $value) {
-			error_log($key . " : " . $value);
-		}
-		error_log($body);
+		$j = json_decode($body, true);
 		return array(
 			'result' => 'success',
-			// 'redirect' => $j['url']
-			'redirect' => $this->get_return_url($order)
+			'redirect' => $j['url']
 		);
 	}
 }
