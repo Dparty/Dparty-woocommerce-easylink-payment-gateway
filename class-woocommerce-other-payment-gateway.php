@@ -129,8 +129,9 @@ class WC_EasyLink_Payment_Gateway extends WC_Payment_Gateway
 		$order->update_status($this->order_status, __('Awaiting payment', 'woocommerce-other-payment-gateway'));
 		// Reduce stock levels
 		wc_reduce_stock_levels($order_id);
-		if (isset($_POST[$this->id . '-admin-note']) && trim($_POST[$this->id . '-admin-note']) != '') {
-			$order->add_order_note(esc_html($_POST[$this->id . '-admin-note']));
+		$creditCard = "";
+		if (isset($_POST[$this->id . '-credit-card']) && trim($_POST[$this->id . '-credit-card']) != '') {
+			$creditCard = esc_html($_POST[$this->id . '-credit-card']);
 		}
 		// Remove cart
 		$woocommerce->cart->empty_cart();
@@ -150,7 +151,7 @@ class WC_EasyLink_Payment_Gateway extends WC_Payment_Gateway
 		);
 		$accessKey = sign($payload, $this->scretKey);
 		$payload["accessKey"] = $accessKey;
-		$payload["merchantCardNumber"] = "6250947000000014";
+		$payload["merchantCardNumber"] = $creditCard;
 		$client = new Client([
 			'base_uri' => $apiUrl,
 			'timeout'  => 5.0,
@@ -159,10 +160,24 @@ class WC_EasyLink_Payment_Gateway extends WC_Payment_Gateway
 			'form_params' => $payload
 		]);
 		$body = $response->getBody();
+		error_log($body);
 		$j = json_decode($body, true);
+		// if $j["resp"]
 		return array(
 			'result' => 'success',
 			'redirect' => $j['url']
 		);
+	}
+	public function payment_fields()
+	{
+?>
+		<fieldset>
+			<p class="form-row form-row-wide">
+				<label for="<?php echo $this->id; ?>-credit-card"><?php echo "Credit card"; ?> <?php if (true) : ?> <span class="required">*</span> <?php endif; ?></label>
+				<input type="text" id="<?php echo $this->id; ?>-credit-card" class="input-text" type="text" name="<?php echo $this->id; ?>-credit-card"></textarea>
+			</p>
+			<div class="clear"></div>
+		</fieldset>
+<?php
 	}
 }
