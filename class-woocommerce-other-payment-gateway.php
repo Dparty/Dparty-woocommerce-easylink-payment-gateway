@@ -19,6 +19,11 @@ class WC_EasyLink_Payment_Gateway extends WC_Payment_Gateway
 	private $merchantsName;
 	private $apiDomain;
 	private $frontendUrl;
+	private $easyLinkDB = "wp_easylink_payment_gateway";
+	private function db()
+	{
+		return new mysqli(DB_HOST, DB_USER, DB_PASSWORD, DB_NAME);
+	}
 	public function __construct()
 	{
 		$this->id = 'other_payment';
@@ -41,11 +46,18 @@ class WC_EasyLink_Payment_Gateway extends WC_Payment_Gateway
 		$this->channelType = $this->get_option('channelType');
 		$this->apiDomain = $this->get_option('apiDomain');
 		$this->frontendUrl = $this->get_option('frontendUrl');
+		add_action('woocommerce_api_easylink_callback', array($this, 'webhook'));
 		add_action('woocommerce_update_options_payment_gateways_' . $this->id, array($this, 'process_admin_options'));
 	}
 
 	public function init_form_fields()
 	{
+		$conn = $this->db();
+		$sql = "CREATE TABLE IF NOT EXISTS $this->easyLinkDB (
+		paymentId VARCHAR(64) PRIMARY KEY,
+		orderId VARCHAR(64)
+		)";
+		$conn->query($sql);
 		$this->form_fields = array(
 			'enabled' => array(
 				'title' 		=> __('Enable/Disable', 'woocommerce-other-payment-gateway'),
@@ -126,7 +138,7 @@ class WC_EasyLink_Payment_Gateway extends WC_Payment_Gateway
 		global $woocommerce;
 		$order = new WC_Order($order_id);
 		// Mark as on-hold (we're awaiting the cheque)
-		$order->update_status($this->order_status, __('Awaiting payment', 'woocommerce-other-payment-gateway'));
+		$order->update_status('pending', __('Awaiting EasyLink payment', 'woocommerce-other-payment-gateway'));
 		// Reduce stock levels
 		wc_reduce_stock_levels($order_id);
 		$creditCard = "";
@@ -160,13 +172,37 @@ class WC_EasyLink_Payment_Gateway extends WC_Payment_Gateway
 			'form_params' => $payload
 		]);
 		$body = $response->getBody();
-		error_log($body);
 		$j = json_decode($body, true);
-		// if $j["resp"]
+		$orderId = $order->get_id();
+		$paymentId = $j['paymentId'];
+		$this->insertPaymentId($paymentId, $orderId);
 		return array(
 			'result' => 'success',
 			'redirect' => $j['url']
 		);
+	}
+	private function insertPaymentId($paymentId, $orderId)
+	{
+		$conn = $this->db();
+		$sql = "INSERT INTO $this->easyLinkDB (paymentId, orderId) VALUE ('$paymentId', '$orderId');";
+		$conn->query($sql);
+	}
+	private function deleteOrder($paymentId)
+	{
+		$conn = $this->db();
+		$sql = "DELETE FROM $this->easyLinkDB WHERE paymentId = '$paymentId';";
+		$conn->query($sql);
+	}
+	private function getOrderByPaymentId($paymentId)
+	{
+		$conn = $this->db();
+		$sql = "SELECT * FROM $this->easyLinkDB WHERE paymentId = '$paymentId';";
+		$result = $conn->query($sql);
+		if ($result->num_rows > 0) {
+			$row = $result->fetch_assoc();
+			return new WC_Order($row["orderId"]);
+		}
+		return null;
 	}
 	public function payment_fields()
 	{
@@ -179,5 +215,21 @@ class WC_EasyLink_Payment_Gateway extends WC_Payment_Gateway
 			<div class="clear"></div>
 		</fieldset>
 <?php
+	}
+	function WebhookData()
+	{
+		$body = file_get_contents("php://input");
+		$object = json_decode($body, true);
+		return $object;
+	}
+	function webhook()
+	{
+		$data = $this->WebhookData();
+		$paymentId = $data["paymentId"];
+		$order = $this->getOrderByPaymentId($paymentId);
+		if ($order != null && $data["status"] == 0) {
+			$order->payment_complete();
+			$this->deleteOrder($paymentId);
+		}
 	}
 }
