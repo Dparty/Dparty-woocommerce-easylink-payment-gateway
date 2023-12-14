@@ -225,10 +225,22 @@ class WC_EasyLink_Payment_Gateway extends WC_Payment_Gateway
 	}
 	function webhook()
 	{
-		$data = $this->WebhookData();
-		$paymentId = $data["paymentId"];
+		$body = file_get_contents("php://input");
+		$a = explode("&", $body);
+		$k = explode("=", $a[1]);
+		$paymentId = "";
+		$status = "0";
+		foreach ($a as &$value) {
+			$k = explode("=", $value);
+			if ($k[0] == "paymentId") {
+				$paymentId = $k[1];
+			}
+			if ($k[0] == "status") {
+				$status = $k[1];
+			}
+		}
 		$order = $this->getOrderByPaymentId($paymentId);
-		if ($order != null && $data["status"] == "1") {
+		if ($order != null && $status == "1") {
 			$order->payment_complete();
 			$this->deleteOrder($paymentId);
 		}
