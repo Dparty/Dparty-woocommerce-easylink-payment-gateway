@@ -33,7 +33,7 @@ class WC_EasyLink_Payment_Gateway extends WC_Payment_Gateway
 		$this->init_form_fields();
 		$this->init_settings();
 		$this->enabled = $this->get_option('enabled');
-		$this->title = 'EasyLink';
+		$this->title = '銀聯';
 		$this->order_status = $this->get_option('order_status');
 		$this->pin = $this->get_option('pin');
 		$this->secPin = $this->get_option('secPin');
