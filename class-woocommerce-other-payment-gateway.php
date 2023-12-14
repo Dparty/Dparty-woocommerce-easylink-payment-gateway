@@ -228,7 +228,7 @@ class WC_EasyLink_Payment_Gateway extends WC_Payment_Gateway
 		$data = $this->WebhookData();
 		$paymentId = $data["paymentId"];
 		$order = $this->getOrderByPaymentId($paymentId);
-		if ($order != null && $data["status"] == "0") {
+		if ($order != null && $data["status"] == "1") {
 			$order->payment_complete();
 			$this->deleteOrder($paymentId);
 		}
